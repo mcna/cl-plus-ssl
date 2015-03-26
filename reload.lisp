@@ -37,6 +37,7 @@
                  "libssl.so.0.9.8" "libssl.so" "libssl.so.4"))
   ((and :unix (not :cygwin)) (:or "libssl.so.1.0.0"
                                   "libssl.so.0.9.8"
+                                  "libssl.so.10"
                                   "libssl.so"
                                   "libssl.so.4"))
   (:cygwin "cygssl-1.0.0.dll")
