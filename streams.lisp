@@ -18,6 +18,9 @@
 
 (in-package :cl+ssl)
 
+;; Default Cipher List
+(defvar *default-cipher-list* "ALL")
+
 (defclass ssl-stream
     (trivial-gray-stream-mixin
      fundamental-binary-input-stream
@@ -124,14 +127,15 @@
         do
           (handler-case
               (with-pointer-to-vector-data (ptr buf)
-                (ensure-ssl-funcall stream
-                                    (ssl-stream-handle stream)
-                                    #'ssl-read
-                                    (ssl-stream-handle stream)
-                                    ptr
-                                    length)
-                (s/b-replace seq buf :start1 start :end1 (+ start length))
-                (incf start length))
+                (let ((read-bytes
+                        (ensure-ssl-funcall stream
+                                            (ssl-stream-handle stream)
+                                            #'ssl-read
+                                            (ssl-stream-handle stream)
+                                            ptr
+                                            length)))
+                  (s/b-replace seq buf :start1 start :end1 (+ start read-bytes))
+                  (incf start read-bytes)))
             (ssl-error-zero-return ()   ;SSL_read returns 0 on end-of-file
               (return))))
     ;; fixme: kein out-of-file wenn (zerop start)?
@@ -335,7 +339,8 @@ may be associated with the passphrase PASSWORD."
 ;; fixme: free the context when errors happen in this function
 (defun make-ssl-server-stream
     (socket &key certificate key password (method 'ssl-v23-method) external-format
-                 close-callback (unwrap-stream-p t))
+                 close-callback (unwrap-stream-p t)
+                 (cipher-list *default-cipher-list*))
   "Returns an SSL stream for the server socket descriptor SOCKET.
 CERTIFICATE is the path to a file containing the PEM-encoded certificate for
  your server. KEY is the path to the PEM-encoded key for the server, which
@@ -349,7 +354,7 @@ may be associated with the passphrase PASSWORD."
         (handle (ssl-new *ssl-global-context*)))
     (setf socket (install-handle-and-bio stream handle socket unwrap-stream-p))
     (ssl-set-accept-state handle)
-    (when (zerop (ssl-set-cipher-list handle "ALL"))
+    (when (zerop (ssl-set-cipher-list handle cipher-list))
       (error 'ssl-error-initialize :reason "Can't set SSL cipher list"))
     (with-pem-password (password)
       (install-key-and-cert handle key certificate))
