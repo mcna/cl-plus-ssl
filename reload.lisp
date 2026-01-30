@@ -30,7 +30,9 @@
 
 (cffi:define-foreign-library libssl
   (:windows "libssl32.dll")
-  (:darwin (:or "libssl.dylib" "/usr/lib/libssl.dylib"))
+  (:darwin (:or "/opt/homebrew/opt/openssl@3/lib/libssl.3.dylib"
+                "/usr/lib/libssl.dylib"
+                "libssl.dylib"))
   (:openbsd (:or "libssl.so.19.0"
                  "libssl.so.18.0" "libssl.so.17.1"
                  "libssl.so.16.0" "libssl.so.15.1"))
